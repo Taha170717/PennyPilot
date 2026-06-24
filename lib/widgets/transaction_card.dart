@@ -3,13 +3,23 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction_model.dart';
 import '../theme.dart';
+
+// Simple helper to format amounts: remove trailing .00 when value is whole
+String _formatAmount(double value) {
+  final s = value.toStringAsFixed(2);
+  if (s.endsWith('.00')) return s.substring(0, s.length - 3);
+  if (s.endsWith('0')) return s.substring(0, s.length - 1);
+  return s;
+}
 class TransactionCard extends StatelessWidget {
   final TransactionModel transaction;
   final VoidCallback onDelete;
+  final VoidCallback? onTap;
   const TransactionCard({
     super.key,
     required this.transaction,
     required this.onDelete,
+    this.onTap,
   });
   IconData _getCategoryIcon(String category) {
     switch (category.toLowerCase()) {
@@ -61,6 +71,7 @@ class TransactionCard extends StatelessWidget {
   }
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final bool isIncome = transaction.isIncome;
     final String symbol = transaction.currency == 'PKR' ? 'Rs.' : '\$';
     final String formattedDate = DateFormat('MMM dd, yyyy - hh:mm a').format(transaction.dateTime);
@@ -70,7 +81,7 @@ class TransactionCard extends StatelessWidget {
       onDismissed: (direction) {
         onDelete();
       },
-      background: Container(
+        background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 24),
         decoration: BoxDecoration(
@@ -83,13 +94,15 @@ class TransactionCard extends StatelessWidget {
           size: 28,
         ),
       ),
-      child: Container(
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
         margin: const EdgeInsets.symmetric(vertical: 6),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.cardBg,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.cardBorder, width: 1.2),
+          border: Border.all(color: theme.dividerColor, width: 1.2),
         ),
         child: Row(
           children: [
@@ -125,7 +138,7 @@ class TransactionCard extends StatelessWidget {
                     style: GoogleFonts.outfit(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: theme.textTheme.bodyLarge?.color,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -143,9 +156,9 @@ class TransactionCard extends StatelessWidget {
                       Container(
                         width: 4,
                         height: 4,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.textMuted,
+                          color: theme.textTheme.bodyMedium?.color == null ? null : theme.textTheme.bodyMedium!.color!.withAlpha((0.7 * 255).round()),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -154,11 +167,11 @@ class TransactionCard extends StatelessWidget {
                           formattedDate,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.outfit(
-                            fontSize: 11,
-                            fontWeight: FontWeight.normal,
-                            color: AppColors.textMuted,
-                          ),
+                            style: GoogleFonts.outfit(
+                              fontSize: 11,
+                              fontWeight: FontWeight.normal,
+                              color: theme.textTheme.bodyMedium?.color == null ? null : theme.textTheme.bodyMedium!.color!.withAlpha((0.7 * 255).round()),
+                            ),
                         ),
                       ),
                     ],
@@ -170,7 +183,7 @@ class TransactionCard extends StatelessWidget {
 
             // Amount
             Text(
-              '${isIncome ? '+' : '-'} $symbol${transaction.amount.toStringAsFixed(2)}',
+                '${isIncome ? '+' : '-'} $symbol${_formatAmount(transaction.amount)}',
               style: GoogleFonts.outfit(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -178,6 +191,7 @@ class TransactionCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

@@ -3,7 +3,25 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../controllers/budget_controller.dart';
-import '../theme.dart';
+
+// Helper to format amounts without unnecessary trailing zeros
+String _formatAmount(double value) {
+  final s = value.toStringAsFixed(2);
+  if (s.endsWith('.00')) return s.substring(0, s.length - 3);
+  if (s.endsWith('0')) return s.substring(0, s.length - 1);
+  return s;
+}
+
+// Compact formatter: convert large numbers to K/M for better calendar display
+String _compactAmount(double value) {
+  if (value.abs() >= 1000000) {
+    return '${_formatAmount((value / 1000000))}M';
+  }
+  if (value.abs() >= 1000) {
+    return '${_formatAmount((value / 1000))}K';
+  }
+  return _formatAmount(value);
+}
 
 class MonthlyView extends StatefulWidget {
   const MonthlyView({super.key});
@@ -45,6 +63,12 @@ class _MonthlyViewState extends State<MonthlyView> {
 
   @override
   Widget build(BuildContext context) {
+     final theme = Theme.of(context);
+     final cardBg = theme.cardColor;
+     final bg = theme.scaffoldBackgroundColor;
+     final textPrimary = theme.textTheme.bodyLarge?.color;
+     final textMuted = theme.textTheme.bodyMedium?.color == null ? Colors.grey : theme.textTheme.bodyMedium!.color!.withAlpha((0.7 * 255).round());
+     final primary = theme.colorScheme.primary;
     final daysInMonth = DateUtils.getDaysInMonth(_visibleMonth.year, _visibleMonth.month);
     final firstWeekday = DateTime(_visibleMonth.year, _visibleMonth.month, 1).weekday; // Monday=1
     final dailyMap = _dailySpentMap();
@@ -53,22 +77,23 @@ class _MonthlyViewState extends State<MonthlyView> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppColors.cardBg,
-        title: Text('Monthly Tracking', style: GoogleFonts.outfit(color: AppColors.textPrimary)),
+        backgroundColor: cardBg,
+        title: Text('Monthly Tracking', style: GoogleFonts.outfit(color: textPrimary)),
         actions: [
           IconButton(
             icon: const Icon(Icons.calendar_month_rounded),
             onPressed: () {},
-            color: AppColors.primary,
+            color: primary,
           ),
         ],
       ),
-      backgroundColor: AppColors.background,
+      backgroundColor: bg,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header with month navigation and currency selector
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -77,26 +102,26 @@ class _MonthlyViewState extends State<MonthlyView> {
                     IconButton(
                       onPressed: _prevMonth,
                       icon: const Icon(Icons.chevron_left_rounded),
-                      color: AppColors.textPrimary,
+                      color: textPrimary,
                     ),
-                    Text(monthLabel, style: GoogleFonts.outfit(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(monthLabel, style: GoogleFonts.outfit(color: textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
                     IconButton(
                       onPressed: _nextMonth,
                       icon: const Icon(Icons.chevron_right_rounded),
-                      color: AppColors.textPrimary,
+                      color: textPrimary,
                     ),
                   ],
                 ),
 
-                // Currency selector
-                DropdownButton<String>(
-                  value: _currency,
-                  dropdownColor: AppColors.cardBg,
-                  items: const [DropdownMenuItem(value: 'PKR', child: Text('PKR')), DropdownMenuItem(value: 'USD', child: Text('USD'))],
-                  onChanged: (v) {
-                    if (v != null) setState(() => _currency = v);
-                  },
-                ),
+                 // Currency selector
+                 DropdownButton<String>(
+                   value: _currency,
+                   dropdownColor: cardBg,
+                   items: const [DropdownMenuItem(value: 'PKR', child: Text('PKR')), DropdownMenuItem(value: 'USD', child: Text('USD'))],
+                   onChanged: (v) {
+                     if (v != null) setState(() => _currency = v);
+                   },
+                 ),
               ],
             ),
 
@@ -108,9 +133,9 @@ class _MonthlyViewState extends State<MonthlyView> {
               child: Row(
                 children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
                     .map((d) => Expanded(
-                          child: Center(
-                            child: Text(d, style: GoogleFonts.outfit(color: AppColors.textMuted, fontWeight: FontWeight.bold, fontSize: 12)),
-                          ),
+                             child: Center(
+                             child: Text(d, style: GoogleFonts.outfit(color: textMuted, fontWeight: FontWeight.bold, fontSize: 12)),
+                           ),
                         ))
                     .toList(),
               ),
@@ -118,50 +143,75 @@ class _MonthlyViewState extends State<MonthlyView> {
 
             const SizedBox(height: 6),
 
-            // Calendar grid
+            // Calendar grid - occupy remaining vertical space (Expanded)
             Expanded(
-              child: GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 7,
-                  childAspectRatio: 1.1,
-                ),
-                itemCount: 7 * ((firstWeekday % 7) + daysInMonth ~/ 7 + 6), // ensure enough cells; we will calculate more simply below
-                itemBuilder: (context, index) {
-                  // Calculate visible day index mapping
-                  // We'll display blanks for days before the 1st of month
-                  final startIndex = (firstWeekday - 1); // convert Monday=1 to 0-based
-                  final dayNumber = index - startIndex + 1;
-                  if (dayNumber < 1 || dayNumber > daysInMonth) {
-                    return Container();
-                  }
+              child: LayoutBuilder(builder: (context, constraints) {
+                final startIndex = (firstWeekday - 1); // convert Monday=1 to 0-based
+                final totalCells = ((startIndex + daysInMonth + 6) ~/ 7) * 7; // round up to full weeks
+                final rows = (totalCells / 7).ceil();
 
-                  final spent = dailyMap[dayNumber] ?? 0.0;
+                // compute cell dimensions based on available width and height
+                final cellWidth = constraints.maxWidth / 7;
+                final cellHeight = (constraints.maxHeight) / rows;
+                final childAspect = cellWidth / cellHeight;
 
-                  return Padding(
-                    padding: const EdgeInsets.all(6.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: spent > 0 ? AppColors.cardBg : Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.cardBorder, width: 1),
+                return GridView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 7,
+                    childAspectRatio: childAspect,
+                  ),
+                  itemCount: totalCells,
+                  itemBuilder: (context, index) {
+                    final dayNumber = index - startIndex + 1;
+                    if (dayNumber < 1 || dayNumber > daysInMonth) {
+                      return const SizedBox.shrink();
+                    }
+
+                    final spent = dailyMap[dayNumber] ?? 0.0;
+
+                    // Improved layout: day number in top-left, compact amount at bottom center
+                    return Padding(
+                      padding: const EdgeInsets.all(6.0),
+                         child: Container(
+                         decoration: BoxDecoration(
+                           color: spent > 0 ? cardBg : Colors.transparent,
+                           borderRadius: BorderRadius.circular(10),
+                           border: Border.all(color: theme.dividerColor, width: 1),
+                         ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Day number top-left
+                            Align(
+                              alignment: Alignment.topLeft,
+                               child: Text('$dayNumber', style: GoogleFonts.outfit(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 13)),
+                            ),
+
+                            const Spacer(),
+
+                            // Compact amount at bottom, use FittedBox so it scales on narrow cells
+                            Align(
+                              alignment: Alignment.bottomCenter,
+                              child: SizedBox(
+                                height: 18,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    spent > 0 ? '$symbol${_compactAmount(spent)}' : '-',
+                                     style: GoogleFonts.outfit(color: spent > 0 ? theme.colorScheme.error : textMuted, fontSize: 12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      padding: const EdgeInsets.all(8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('$dayNumber', style: GoogleFonts.outfit(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
-                          const Spacer(),
-                          Text(
-                            spent > 0 ? '$symbol${spent.toStringAsFixed(2)}' : '-',
-                            style: GoogleFonts.outfit(color: spent > 0 ? AppColors.expense : AppColors.textMuted, fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                );
+              }),
             ),
 
             const SizedBox(height: 12),
@@ -171,13 +221,13 @@ class _MonthlyViewState extends State<MonthlyView> {
               final monthExpenses = txList
                   .where((tx) => !tx.isIncome && tx.dateTime.year == _visibleMonth.year && tx.dateTime.month == _visibleMonth.month)
                   .fold(0.0, (sum, tx) => sum + tx.amount);
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Total spent this month', style: GoogleFonts.outfit(color: AppColors.textSecondary)),
-                  Text('$symbol${monthExpenses.toStringAsFixed(2)}', style: GoogleFonts.outfit(color: AppColors.expense, fontWeight: FontWeight.bold)),
-                ],
-              );
+               return Row(
+                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                 children: [
+                   Text('Total spent this month', style: GoogleFonts.outfit(color: textPrimary?.withAlpha((0.7 * 255).round()))),
+                   Text('$symbol${_formatAmount(monthExpenses)}', style: GoogleFonts.outfit(color: theme.colorScheme.error, fontWeight: FontWeight.bold)),
+                 ],
+               );
             }),
 
             const SizedBox(height: 8),

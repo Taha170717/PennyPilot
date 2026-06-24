@@ -4,7 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../theme.dart';
 class AddTransactionDialog extends StatefulWidget {
   final String initialCurrency;
-  const AddTransactionDialog({super.key, required this.initialCurrency});
+  /// If provided, the dialog will be used to edit the existing transaction.
+  final dynamic initialTransaction; // TransactionModel? kept dynamic to avoid import cycles in tests
+  const AddTransactionDialog({super.key, required this.initialCurrency, this.initialTransaction});
   @override
   State<AddTransactionDialog> createState() => _AddTransactionDialogState();
 }
@@ -35,7 +37,17 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
   void initState() {
     super.initState();
     _selectedCurrency = widget.initialCurrency;
-    _selectedCategory = _isIncome ? 'Salary' : 'Food';
+    // If editing an existing transaction, prefill fields
+    if (widget.initialTransaction != null) {
+      final tx = widget.initialTransaction;
+      _isIncome = tx.isIncome;
+      _selectedCurrency = tx.currency;
+      _selectedCategory = tx.category;
+      _amountController.text = tx.amount.toString();
+      _descController.text = tx.description;
+    } else {
+      _selectedCategory = _isIncome ? 'Salary' : 'Food';
+    }
   }
   @override
   void dispose() {
@@ -46,7 +58,14 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
   @override
   Widget build(BuildContext context) {
     final categories = _isIncome ? _incomeCategories : _expenseCategories;
+    final theme = Theme.of(context);
     final primaryThemeColor = _isIncome ? AppColors.income : AppColors.expense;
+    // theme-aware local colors
+    final cardBg = theme.cardColor;
+    final cardBorder = theme.dividerColor;
+    final textPrimary = theme.textTheme.bodyLarge?.color ?? AppColors.textPrimary;
+    final textSecondary = theme.textTheme.bodyMedium?.color ?? AppColors.textSecondary;
+     final textMuted = theme.textTheme.bodyMedium?.color == null ? AppColors.textMuted : theme.textTheme.bodyMedium!.color!.withAlpha((0.7 * 255).round());
     return Container(
       padding: EdgeInsets.only(
         left: 24,
@@ -54,8 +73,8 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
         top: 24,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.cardBg,
+      decoration: BoxDecoration(
+        color: cardBg,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(32),
           topRight: Radius.circular(32),
@@ -74,21 +93,22 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                   width: 50,
                   height: 5,
                   decoration: BoxDecoration(
-                    color: AppColors.textMuted.withAlpha((0.3 * 255).round()),
+                    color: (textMuted).withAlpha((0.3 * 255).round()),
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
               ),
               const SizedBox(height: 24),
 
-              Text(
-                'Add Transaction',
-                style: GoogleFonts.outfit(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
+               // Title
+               Text(
+                 'Add Transaction',
+                 style: GoogleFonts.outfit(
+                   fontSize: 24,
+                   fontWeight: FontWeight.bold,
+                   color: textPrimary,
+                 ),
+               ),
               const SizedBox(height: 20),
               // Transaction Type Selector (Income / Expense)
               Row(
@@ -104,12 +124,12 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: BoxDecoration(
-                          color: _isIncome
-                              ? AppColors.income.withAlpha((0.12 * 255).round())
-                              : AppColors.cardBg,
+                           color: _isIncome
+                               ? AppColors.income.withAlpha((0.12 * 255).round())
+                               : cardBg,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: _isIncome ? AppColors.income : AppColors.cardBorder,
+                             color: _isIncome ? AppColors.income : cardBorder,
                             width: 1.5,
                           ),
                         ),
@@ -117,7 +137,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                           child: Text(
                             'INCOME (+)',
                             style: GoogleFonts.outfit(
-                              color: _isIncome ? AppColors.income : AppColors.textSecondary,
+                               color: _isIncome ? AppColors.income : textSecondary,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
@@ -138,12 +158,12 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: BoxDecoration(
-                          color: !_isIncome
-                              ? AppColors.expense.withAlpha((0.12 * 255).round())
-                              : AppColors.cardBg,
+                           color: !_isIncome
+                               ? AppColors.expense.withAlpha((0.12 * 255).round())
+                               : cardBg,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: !_isIncome ? AppColors.expense : AppColors.cardBorder,
+                             color: !_isIncome ? AppColors.expense : cardBorder,
                             width: 1.5,
                           ),
                         ),
@@ -151,7 +171,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                           child: Text(
                             'EXPENSE (-)',
                             style: GoogleFonts.outfit(
-                              color: !_isIncome ? AppColors.expense : AppColors.textSecondary,
+                               color: !_isIncome ? AppColors.expense : textSecondary,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
@@ -166,13 +186,13 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
               // Currency Selector
               Row(
                 children: [
-                  Text(
-                    'Currency:',
-                    style: GoogleFonts.outfit(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
+                    Text(
+                      'Currency:',
+                      style: GoogleFonts.outfit(
+                        color: textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
                   const SizedBox(width: 16),
                   ...['PKR', 'USD'].map((curr) {
                     final isSelected = _selectedCurrency == curr;
@@ -185,14 +205,14 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                         selectedColor: currColor.withAlpha((0.2 * 255).round()),
                         checkmarkColor: currColor,
                         labelStyle: GoogleFonts.outfit(
-                          color: isSelected ? currColor : AppColors.textSecondary,
+                          color: isSelected ? currColor : textSecondary,
                           fontWeight: FontWeight.bold,
                         ),
                         side: BorderSide(
-                          color: isSelected ? currColor : AppColors.cardBorder,
+                          color: isSelected ? currColor : cardBorder,
                           width: 1.2,
                         ),
-                        backgroundColor: AppColors.cardBg,
+                        backgroundColor: cardBg,
                         onSelected: (val) {
                           if (val) {
                             setState(() {
@@ -210,14 +230,14 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
               TextFormField(
                 controller: _amountController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: GoogleFonts.outfit(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold),
+                style: GoogleFonts.outfit(color: textPrimary, fontSize: 18, fontWeight: FontWeight.bold),
                 decoration: InputDecoration(
                   labelText: 'Amount',
-                  labelStyle: GoogleFonts.outfit(color: AppColors.textSecondary),
-                  prefixIcon: Icon(Icons.attach_money_rounded, color: primaryThemeColor),
+                   labelStyle: GoogleFonts.outfit(color: textSecondary),
+                   prefixIcon: Icon(Icons.attach_money_rounded, color: primaryThemeColor),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: AppColors.cardBorder, width: 1.5),
+                    borderSide: BorderSide(color: cardBorder, width: 1.5),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -246,14 +266,14 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
               // Description Input (Where money come/gone)
               TextFormField(
                 controller: _descController,
-                style: GoogleFonts.outfit(color: AppColors.textPrimary),
+                style: GoogleFonts.outfit(color: textPrimary),
                 decoration: InputDecoration(
                   labelText: _isIncome ? 'Where did this money come from?' : 'Where did this money go?',
-                  labelStyle: GoogleFonts.outfit(color: AppColors.textSecondary),
-                  prefixIcon: Icon(Icons.edit_note_rounded, color: primaryThemeColor),
+                   labelStyle: GoogleFonts.outfit(color: textSecondary),
+                   prefixIcon: Icon(Icons.edit_note_rounded, color: primaryThemeColor),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: AppColors.cardBorder, width: 1.5),
+                    borderSide: BorderSide(color: cardBorder, width: 1.5),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -280,7 +300,7 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
               Text(
                 'Category',
                 style: GoogleFonts.outfit(
-                  color: AppColors.textSecondary,
+                           color: textSecondary,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),
@@ -307,27 +327,27 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
                         margin: const EdgeInsets.only(right: 10),
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         decoration: BoxDecoration(
-                          color: isSelected
-                              ? primaryThemeColor.withAlpha((0.15 * 255).round())
-                              : AppColors.cardBg,
+                           color: isSelected
+                               ? primaryThemeColor.withAlpha((0.15 * 255).round())
+                               : cardBg,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isSelected ? primaryThemeColor : AppColors.cardBorder,
-                            width: 1.5,
-                          ),
+                           border: Border.all(
+                             color: isSelected ? primaryThemeColor : cardBorder,
+                             width: 1.5,
+                           ),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               catIcon,
                               size: 18,
-                              color: isSelected ? primaryThemeColor : AppColors.textSecondary,
+                                 color: isSelected ? primaryThemeColor : textSecondary,
                             ),
                             const SizedBox(width: 8),
                             Text(
                               catName,
                               style: GoogleFonts.outfit(
-                                color: isSelected ? primaryThemeColor : AppColors.textSecondary,
+                                color: isSelected ? primaryThemeColor : textSecondary,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                               ),
@@ -343,18 +363,24 @@ class _AddTransactionDialogState extends State<AddTransactionDialog> {
               // Action Button (Add)
               GestureDetector(
                 onTap: () {
-                  if (_formKey.currentState!.validate()) {
-                    final double amt = double.parse(_amountController.text);
-                    final String desc = _descController.text.trim();
+                    if (_formKey.currentState!.validate()) {
+                        final double amt = double.parse(_amountController.text);
+                        final String desc = _descController.text.trim();
 
-                    Get.back(result: {
-                      'amount': amt,
-                      'isIncome': _isIncome,
-                      'description': desc,
-                      'currency': _selectedCurrency,
-                      'category': _selectedCategory,
-                    });
-                  }
+                        final result = {
+                          'amount': amt,
+                          'isIncome': _isIncome,
+                          'description': desc,
+                          'currency': _selectedCurrency,
+                          'category': _selectedCategory,
+                        };
+                        // If editing, include original id so caller can update
+                        if (widget.initialTransaction != null) {
+                          result['id'] = widget.initialTransaction.id;
+                        }
+
+                        Get.back(result: result);
+                      }
                 },
                 child: Container(
                   width: double.infinity,

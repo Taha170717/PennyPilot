@@ -53,12 +53,16 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
   }
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bg = theme.scaffoldBackgroundColor;
+    final primary = theme.colorScheme.primary;
+    final secondary = theme.colorScheme.secondary;
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          color: AppColors.background,
+        decoration: BoxDecoration(
+          color: bg,
         ),
         child: Stack(
           alignment: Alignment.center,
@@ -72,15 +76,15 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
                 height: 300,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.primary.withAlpha((0.15 * 255).round()),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withAlpha((0.15 * 255).round()),
-                      blurRadius: 100,
-                      spreadRadius: 80,
-                      offset: Offset.zero,
-                    ),
-                  ],
+                   color: primary.withAlpha((0.15 * 255).round()),
+                   boxShadow: [
+                     BoxShadow(
+                       color: primary.withAlpha((0.15 * 255).round()),
+                       blurRadius: 100,
+                       spreadRadius: 80,
+                       offset: Offset.zero,
+                     ),
+                   ],
                 ),
               ),
             ),
@@ -92,15 +96,15 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
                 height: 400,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.secondary.withAlpha((0.12 * 255).round()),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.secondary.withAlpha((0.12 * 255).round()),
-                      blurRadius: 120,
-                      spreadRadius: 90,
-                      offset: Offset.zero,
-                    ),
-                  ],
+                   color: secondary.withAlpha((0.12 * 255).round()),
+                   boxShadow: [
+                     BoxShadow(
+                       color: secondary.withAlpha((0.12 * 255).round()),
+                       blurRadius: 120,
+                       spreadRadius: 90,
+                       offset: Offset.zero,
+                     ),
+                   ],
                 ),
               ),
             ),
@@ -126,30 +130,34 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
                     height: 110,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                          colors: [
-                            AppColors.primary.withAlpha((0.3 * 255).round()),
-                            AppColors.secondary.withAlpha((0.05 * 255).round()),
-                          ],
+                             colors: [
+                                   primary.withAlpha((0.3 * 255).round()),
+                                   secondary.withAlpha((0.05 * 255).round()),
+                                 ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(30),
-                        border: Border.all(
-                          color: AppColors.primary.withAlpha((0.4 * 255).round()),
-                          width: 1.5,
-                        ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withAlpha((0.2 * 255).round()),
-                          blurRadius: 30,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
+                           border: Border.all(
+                           color: primary.withAlpha((0.4 * 255).round()),
+                           width: 1.5,
+                         ),
+                       boxShadow: [
+                         BoxShadow(
+                           color: primary.withAlpha((0.2 * 255).round()),
+                           blurRadius: 30,
+                           offset: const Offset(0, 10),
+                         ),
+                       ],
                     ),
-                    child: const Icon(
-                      Icons.flight_takeoff_rounded,
-                      size: 55,
-                      color: AppColors.textPrimary,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.asset(
+                        'assets/icons/icon.png',
+                        width: 55,
+                        height: 55,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 30),
@@ -172,12 +180,12 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
                   // Subtitle
                   Text(
                     'NAVIGATE YOUR WEALTH',
-                    style: GoogleFonts.outfit(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textSecondary,
-                      letterSpacing: 4.0,
-                    ),
+                     style: GoogleFonts.outfit(
+                       fontSize: 13,
+                       fontWeight: FontWeight.bold,
+                       color: theme.textTheme.bodyMedium?.color,
+                       letterSpacing: 4.0,
+                     ),
                   ),
                   const SizedBox(height: 80),
 
@@ -186,7 +194,7 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
                     width: 45,
                     height: 45,
                     child: CircularProgressIndicator(
-                       valueColor: AlwaysStoppedAnimation<Color>(AppColors.secondary.withAlpha((0.8 * 255).round())),
+                         valueColor: AlwaysStoppedAnimation<Color>(secondary.withAlpha((0.8 * 255).round())),
                       strokeWidth: 2,
                     ),
                   ),
@@ -201,12 +209,12 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
                 opacity: _fadeAnimation,
                 child: Text(
                   'FINANCIAL FREEDOM AWAITS',
-                  style: GoogleFonts.outfit(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textMuted,
-                    letterSpacing: 2.0,
-                  ),
+                     style: GoogleFonts.outfit(
+                     fontSize: 10,
+                     fontWeight: FontWeight.w500,
+                     color: theme.textTheme.bodyMedium?.color,
+                     letterSpacing: 2.0,
+                   ),
                 ),
               ),
             ),

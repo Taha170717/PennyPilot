@@ -62,4 +62,23 @@ class AppTheme {
       // Card theme removed to avoid SDK type mismatches; defaults will be used.
     );
   }
+
+  static ThemeData get lightTheme {
+    return ThemeData.light().copyWith(
+      scaffoldBackgroundColor: const Color(0xFFF7F7FA),
+      colorScheme: const ColorScheme.light(
+        primary: AppColors.primary,
+        secondary: AppColors.secondary,
+        surface: Color(0xFFFFFFFF),
+      ),
+      textTheme: GoogleFonts.outfitTextTheme(ThemeData.light().textTheme).copyWith(
+        bodyLarge: GoogleFonts.outfit(color: const Color(0xFF0B1220), fontSize: 16),
+        bodyMedium: GoogleFonts.outfit(color: const Color(0xFF4B5563), fontSize: 14),
+        titleLarge: GoogleFonts.outfit(color: const Color(0xFF0B1220), fontSize: 22, fontWeight: FontWeight.bold),
+        headlineMedium: GoogleFonts.outfit(color: const Color(0xFF0B1220), fontSize: 28, fontWeight: FontWeight.bold),
+      ),
+      cardColor: const Color(0xFFFFFFFF),
+      // Customize other light theme properties as needed
+    );
+  }
 }
