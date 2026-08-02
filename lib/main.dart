@@ -16,7 +16,7 @@ void main() async {
   // Initialize theme controller (reads persisted preference)
   Get.put(ThemeController());
 
-  runApp(const PennyPilotApp());
+    runApp(const PennyPilotApp());
 }
 class PennyPilotApp extends StatelessWidget {
   const PennyPilotApp({super.key});
