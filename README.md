@@ -13,6 +13,7 @@ Key features
 - Settings and account management
 
 Screenshot / Demo
+
 > Add screenshots or a short demo GIF here (assets/screenshots). Example:
 
 ![PennyPilot Dashboard](docs/screenshots/dashboard.png)
