@@ -4,7 +4,6 @@ PennyPilot is a cross-platform personal finance Flutter application for tracking
 
 This repository contains the Flutter source code and multi-platform configuration (Android, iOS, web, macOS, Windows, Linux).
 
-
 Key features
 - User authentication (register / login)
 - Add, edit and delete transactions
