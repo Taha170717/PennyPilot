@@ -15,7 +15,6 @@ Key features
 Screenshot / Demo
 
 
-
 > Add screenshots or a short demo GIF here (assets/screenshots). Example:
 
 ![PennyPilot Dashboard](docs/screenshots/dashboard.png)
